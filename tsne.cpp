@@ -134,7 +134,7 @@ bool TSNE::step(double theta) // Returns whether to continue.
     if(iter == mom_switch_iter) momentum = final_momentum;
 
     // Print out progress
-    if(iter > 0 && iter % 50 == 0 || iter == max_iter - 1) {
+    if((iter > 0 && iter % 50 == 0) || iter == max_iter - 1) {
         double C = .0;
         if(exact) C = evaluateError(P, Y, N);
         else      C = evaluateError(row_P, col_P, val_P, Y, N, theta);  // doing approximate computation here!
@@ -801,8 +801,7 @@ void save_data(double* data, int* landmarks, double* costs, int n, int d) {
 int main() {
 
     // Define some variables
-	int origN, N, D, no_dims = 2, *landmarks;
-	double perc_landmarks;
+    int origN, N, D, no_dims = 2;
 	double perplexity, theta, *data;
 
     // Read the parameters and the dataset
