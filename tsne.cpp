@@ -92,6 +92,7 @@ TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, d
     if(exact) { for(int i = 0; i < N * N; i++)        P[i] *= 12.0; }
     else {      for(int i = 0; i < row_P[N]; i++) val_P[i] *= 12.0; }
 
+    iter = 0;
 }
 
 TSNE::~TSNE() {
@@ -109,32 +110,10 @@ TSNE::~TSNE() {
 
 // Perform t-SNE
 void TSNE::run() {
-    clock_t start = clock();
-	for(int iter = 0; iter < max_iter; iter++) {
-        step();
-
-        // Stop lying about the P-values after a while, and switch momentum
-        if(iter == stop_lying_iter) {
-            if(exact) { for(int i = 0; i < N * N; i++)        P[i] /= 12.0; }
-            else      { for(int i = 0; i < row_P[N]; i++) val_P[i] /= 12.0; }
-        }
-        if(iter == mom_switch_iter) momentum = final_momentum;
-
-        // Print out progress
-        if(iter > 0 && iter % 50 == 0 || iter == max_iter - 1) {
-            double C = .0;
-            if(exact) C = evaluateError(P, Y, N);
-            else      C = evaluateError(row_P, col_P, val_P, Y, N, theta);  // doing approximate computation here!
-            printf("Iteration %d: error is %f\n", iter + 1, C);
-        }
-    }
-    clock_t end = clock();
-    float total_time = (float) (end - start) / CLOCKS_PER_SEC;
-
-    printf("Fitting performed in %4.2f seconds.\n", total_time);
+    while(step());
 }
 
-void TSNE::step()
+bool TSNE::step() // Returns whether to continue.
 {
     // Compute (approximate) gradient
     if(exact) computeExactGradient(P, Y, N, no_dims, dY);
@@ -150,6 +129,24 @@ void TSNE::step()
 
     // Make solution zero-mean
     zeroMean(Y, N, no_dims);
+
+    // Stop lying about the P-values after a while, and switch momentum
+    if(iter == stop_lying_iter) {
+        if(exact) { for(int i = 0; i < N * N; i++)        P[i] /= 12.0; }
+        else      { for(int i = 0; i < row_P[N]; i++) val_P[i] /= 12.0; }
+    }
+    if(iter == mom_switch_iter) momentum = final_momentum;
+
+    if (iter == max_iter) return false;
+
+    // Print out progress
+    if(iter > 0 && iter % 50 == 0 || iter == max_iter - 1) {
+        double C = .0;
+        if(exact) C = evaluateError(P, Y, N);
+        else      C = evaluateError(row_P, col_P, val_P, Y, N, theta);  // doing approximate computation here!
+        printf("Iteration %d: error is %f\n", iter + 1, C);
+    }
+    return true;
 }
 
 

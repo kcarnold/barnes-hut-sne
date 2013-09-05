@@ -21,7 +21,7 @@ public:
     TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta);
     ~TSNE();
     void run();
-    void step();
+    bool step();
 
     void symmetrizeMatrix(int** row_P, int** col_P, double** val_P, int N); // should be static?!
 
@@ -49,6 +49,7 @@ private:
     int no_dims;
 
     // Learning state
+    int iter;
     double* P; int* row_P; int* col_P; double* val_P;
     double* dY;
     double* uY;
