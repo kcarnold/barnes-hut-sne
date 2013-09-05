@@ -18,10 +18,10 @@ static inline double sign(double x) { return (x == .0 ? .0 : (x < .0 ? -1.0 : 1.
 class TSNE
 {
 public:
-    TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta);
+    TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, bool exact);
     ~TSNE();
-    void run();
-    bool step();
+    void run(double theta);
+    bool step(double theta);
 
     void symmetrizeMatrix(int** row_P, int** col_P, double** val_P, int N); // should be static?!
 
@@ -38,7 +38,7 @@ private:
     void computeSquaredEuclideanDistance(double* X, int N, int D, double* DD);
 
     // Learning parameters
-    double theta;
+    bool exact;
     int max_iter, stop_lying_iter, mom_switch_iter;
     double momentum, final_momentum;
     double eta;
@@ -54,8 +54,6 @@ private:
     double* dY;
     double* uY;
     double* gains;
-
-    bool exact;
 
 };
 

@@ -24,13 +24,9 @@ extern "C" {
 
 using namespace std;
 
-TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, double theta) : theta(theta), N(N), D(D), Y(Y), no_dims(no_dims)
+TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, bool exact) : exact(exact), N(N), D(D), Y(Y), no_dims(no_dims)
 {
-    // Determine whether we are using an exact algorithm
     if(N - 1 < 3 * perplexity) { printf("Perplexity too large for the number of data points!\n"); exit(1); }
-    printf("Using no_dims = %d, perplexity = %f, and theta = %f\n", no_dims, perplexity, theta);
-    exact = (theta == .0) ? true : false;
-
 
     // Allocate some memory
     dY    = (double*) malloc(N * no_dims * sizeof(double));
@@ -109,11 +105,11 @@ TSNE::~TSNE() {
 }
 
 // Perform t-SNE
-void TSNE::run() {
-    while(step());
+void TSNE::run(double theta) {
+    while(step(theta));
 }
 
-bool TSNE::step() // Returns whether to continue.
+bool TSNE::step(double theta) // Returns whether to continue.
 {
     // Compute (approximate) gradient
     if(exact) computeExactGradient(P, Y, N, no_dims, dY);
@@ -826,8 +822,8 @@ int main() {
         // Initialize solution (randomly)
         for(int i = 0; i < N * no_dims; i++) Y[i] = randn() * .0001;
 
-        TSNE* tsne = new TSNE(data, N, D, Y, no_dims, perplexity, theta);
-		tsne->run();
+        TSNE* tsne = new TSNE(data, N, D, Y, no_dims, perplexity, theta != 0);
+		tsne->run(theta);
 
 		// Save the results
 		save_data(Y, landmarks, costs, N, no_dims);
