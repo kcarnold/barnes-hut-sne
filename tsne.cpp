@@ -133,8 +133,6 @@ bool TSNE::step(double theta) // Returns whether to continue.
     }
     if(iter == mom_switch_iter) momentum = final_momentum;
 
-    if (iter == max_iter) return false;
-
     // Print out progress
     if(iter > 0 && iter % 50 == 0 || iter == max_iter - 1) {
         double C = .0;
@@ -142,7 +140,9 @@ bool TSNE::step(double theta) // Returns whether to continue.
         else      C = evaluateError(row_P, col_P, val_P, Y, N, theta);  // doing approximate computation here!
         printf("Iteration %d: error is %f\n", iter + 1, C);
     }
-    return true;
+
+    iter++;
+    return iter != max_iter;
 }
 
 
