@@ -92,8 +92,6 @@ TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, d
     if(exact) { for(int i = 0; i < N * N; i++)        P[i] *= 12.0; }
     else {      for(int i = 0; i < row_P[N]; i++) val_P[i] *= 12.0; }
 
-    // Initialize solution (randomly)
-    for(int i = 0; i < N * no_dims; i++) Y[i] = randn() * .0001;
 }
 
 TSNE::~TSNE() {
@@ -752,7 +750,7 @@ void TSNE::zeroMean(double* X, int N, int D) {
 
 
 // Generates a Gaussian random number
-double TSNE::randn() {
+double randn() {
 	double x, y, radius;
 	do {
 		x = 2 * (rand() / ((double) RAND_MAX + 1)) - 1;
@@ -827,6 +825,10 @@ int main() {
 		double* Y = (double*) malloc(N * no_dims * sizeof(double));
 		double* costs = (double*) calloc(N, sizeof(double));
         if(Y == NULL || costs == NULL) { printf("Memory allocation failed!\n"); exit(1); }
+
+        // Initialize solution (randomly)
+        for(int i = 0; i < N * no_dims; i++) Y[i] = randn() * .0001;
+
         TSNE* tsne = new TSNE(data, N, D, Y, no_dims, perplexity, theta);
 		tsne->run();
 
