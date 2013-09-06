@@ -151,7 +151,7 @@ void TSNE::computeGradient(double* P, int* inp_row_P, int* inp_col_P, double* in
 {
 
     // Construct quadtree on current map
-    QuadTree* tree = new QuadTree(Y, N, 2);
+    QuadTree* tree = new QuadTree(Y, N, no_dims);
 
     // Compute all terms required for t-SNE gradient
     double sum_Q = .0;
@@ -253,9 +253,8 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
 {
 
     // Get estimate of normalization term
-    int QT_NO_DIMS = 2;
-    QuadTree* tree = new QuadTree(Y, N, QT_NO_DIMS);
-    double* buff = new double[QT_NO_DIMS]();
+    QuadTree* tree = new QuadTree(Y, N, no_dims);
+    double* buff = new double[no_dims]();
     double sum_Q = .0;
     for(int n = 0; n < N; n++) tree->computeNonEdgeForces(n, theta, buff, &sum_Q);
 
@@ -263,13 +262,13 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
     int ind1, ind2;
     double C = .0, Q;
     for(int n = 0; n < N; n++) {
-        ind1 = n * QT_NO_DIMS;
+        ind1 = n * no_dims;
         for(int i = row_P[n]; i < row_P[n + 1]; i++) {
             Q = .0;
-            ind2 = col_P[i] * QT_NO_DIMS;
-            for(int d = 0; d < QT_NO_DIMS; d++) buff[d]  = Y[ind1 + d];
-            for(int d = 0; d < QT_NO_DIMS; d++) buff[d] -= Y[ind2 + d];
-            for(int d = 0; d < QT_NO_DIMS; d++) Q += buff[d] * buff[d];
+            ind2 = col_P[i] * no_dims;
+            for(int d = 0; d < no_dims; d++) buff[d]  = Y[ind1 + d];
+            for(int d = 0; d < no_dims; d++) buff[d] -= Y[ind2 + d];
+            for(int d = 0; d < no_dims; d++) Q += buff[d] * buff[d];
             Q = (1.0 / (1.0 + Q)) / sum_Q;
             C += val_P[i] * log((val_P[i] + FLT_MIN) / (Q + FLT_MIN));
         }
