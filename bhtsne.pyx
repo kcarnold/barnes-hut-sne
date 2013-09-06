@@ -3,7 +3,6 @@
 # distutils: libraries = cblas
 # distutils: include_dirs = /System/Library/Frameworks/Accelerate.framework/Versions/A/Frameworks/vecLib.framework/Versions/A/Headers
 
-from libc.stdlib cimport rand, srand
 from libcpp cimport bool
 
 cdef extern from "tsne.h":
@@ -13,16 +12,20 @@ cdef extern from "tsne.h":
         bool step(double theta)
 
 
-def tsne(double[:, ::1] X not None, double[:, ::1] Y not None, double perplexity=30.0, double theta=0.5):
-    cdef int N = X.shape[0]
-    cdef int D = X.shape[1]
-    cdef int no_dims = Y.shape[1]
+cdef class Processor(object):
+    cdef TSNE* runner
+    cdef double[:, ::1] Y
+    def __init__(self, double[:, ::1] X not None, double[:, ::1] Y not None, double perplexity=30.0):
+        cdef int N = X.shape[0]
+        cdef int D = X.shape[1]
+        cdef int no_dims = Y.shape[1]
 
-    cdef TSNE* runner = new TSNE(&X[0,0], N, D, &Y[0,0], no_dims, perplexity, False)
-    try:
-        runner.run(theta)
-    finally:
-        del runner
+        self.Y = Y
+        self.runner = new TSNE(&X[0,0], N, D, &Y[0,0], no_dims, perplexity, False)
 
-def crand():
-    return rand()
+    def run(self, theta=0.5):
+        while self.runner.step(theta):
+            pass
+
+    def step(self, theta=0.5):
+        self.runner.step(theta)
