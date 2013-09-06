@@ -29,13 +29,11 @@ public:
 
 class QuadTree
 {
-
-    // Fixed constants
-    static const int QT_NO_DIMS = 2;
+    int no_dims;
     static const int QT_NODE_CAPACITY = 1;
 
     // A buffer we use when doing force computations
-    double buff[QT_NO_DIMS];
+    double* buff;
 
     // Properties of this node in the tree
     QuadTree* parent;
@@ -48,7 +46,7 @@ class QuadTree
 
     // Indices in this quad tree node, corresponding center-of-mass, and list of all children
     double* data;
-    double center_of_mass[QT_NO_DIMS];
+    double* center_of_mass;
     int index[QT_NODE_CAPACITY];
 
     // Children
@@ -58,11 +56,11 @@ class QuadTree
     QuadTree* southEast;
 
 public:
-    QuadTree(double* inp_data, int N);
-    QuadTree(double* inp_data, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(double* inp_data, int N, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(QuadTree* inp_parent, double* inp_data, int N, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(QuadTree* inp_parent, double* inp_data, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(double* inp_data, int N, int no_dims);
+    QuadTree(double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(QuadTree* inp_parent, double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(QuadTree* inp_parent, double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
     ~QuadTree();
     void setData(double* inp_data);
     QuadTree* getParent();
