@@ -84,6 +84,10 @@ QuadTree::QuadTree(QuadTree* inp_parent, double* inp_data, int no_dims, double i
 // Main initialization function
 void QuadTree::init(QuadTree* inp_parent, double* inp_data, double inp_x, double inp_y, double inp_hw, double inp_hh)
 {
+    if (no_dims > QT_MAX_DIMS) {
+        fprintf(stderr, "Too many quadtree dims! Falling back to %d\n", QT_MAX_DIMS);
+        no_dims = QT_MAX_DIMS;
+    }
     parent = inp_parent;
     data = inp_data;
     is_leaf = true;
@@ -97,8 +101,6 @@ void QuadTree::init(QuadTree* inp_parent, double* inp_data, double inp_x, double
     northEast = NULL;
     southWest = NULL;
     southEast = NULL;
-    buff = new double[no_dims];
-    center_of_mass = new double[no_dims];
     for(int i = 0; i < no_dims; i++) center_of_mass[i] = .0;
 }
 
@@ -110,8 +112,6 @@ QuadTree::~QuadTree()
     delete northEast;
     delete southWest;
     delete southEast;
-    delete[] buff;
-    delete[] center_of_mass;
 }
 
 

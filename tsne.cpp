@@ -256,8 +256,6 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
     int QT_NO_DIMS = 2;
     QuadTree* tree = new QuadTree(Y, N, QT_NO_DIMS);
     double* buff = new double[QT_NO_DIMS]();
-    if (buff[0] != 0.)
-        fprintf(stderr, "YELL!\n");
     double sum_Q = .0;
     for(int n = 0; n < N; n++) tree->computeNonEdgeForces(n, theta, buff, &sum_Q);
 

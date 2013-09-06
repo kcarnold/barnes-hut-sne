@@ -30,10 +30,11 @@ public:
 class QuadTree
 {
     int no_dims;
+    static const int QT_MAX_DIMS = 3;
     static const int QT_NODE_CAPACITY = 1;
 
     // A buffer we use when doing force computations
-    double* buff;
+    double buff[QT_MAX_DIMS];
 
     // Properties of this node in the tree
     QuadTree* parent;
@@ -46,7 +47,7 @@ class QuadTree
 
     // Indices in this quad tree node, corresponding center-of-mass, and list of all children
     double* data;
-    double* center_of_mass;
+    double center_of_mass[QT_MAX_DIMS];
     int index[QT_NODE_CAPACITY];
 
     // Children
