@@ -17,7 +17,7 @@
 
 
 // Checks whether a point lies in a cell
-bool Cell::containsPoint(double point[]) 
+bool Cell::containsPoint(double point[])
 {
     if(x - hw > point[0]) return false;
     if(x + hw < point[0]) return false;
@@ -30,7 +30,7 @@ bool Cell::containsPoint(double point[])
 // Default constructor for quadtree -- build tree, too!
 QuadTree::QuadTree(double* inp_data, int N)
 {
-    
+
     // Compute mean, width, and height of current map (boundaries of quadtree)
     double* mean_Y = new double[QT_NO_DIMS]; for(int d = 0; d < QT_NO_DIMS; d++) mean_Y[d] = .0;
     double*  min_Y = new double[QT_NO_DIMS]; for(int d = 0; d < QT_NO_DIMS; d++)  min_Y[d] =  DBL_MAX;
@@ -43,7 +43,7 @@ QuadTree::QuadTree(double* inp_data, int N)
         }
     }
     for(int d = 0; d < QT_NO_DIMS; d++) mean_Y[d] /= (double) N;
-    
+
     // Construct quadtree
     init(NULL, inp_data, mean_Y[0], mean_Y[1], max(max_Y[0] - mean_Y[0], mean_Y[0] - min_Y[0]) + 1e-5,
                                                max(max_Y[1] - mean_Y[1], mean_Y[1] - min_Y[1]) + 1e-5);
@@ -132,21 +132,21 @@ bool QuadTree::insert(int new_index)
     double* point = data + new_index * QT_NO_DIMS;
     if(!boundary.containsPoint(point))
         return false;
-    
+
     // Online update of cumulative size and center-of-mass
     cum_size++;
     double mult1 = (double) (cum_size - 1) / (double) cum_size;
     double mult2 = 1.0 / (double) cum_size;
     for(int d = 0; d < QT_NO_DIMS; d++) center_of_mass[d] *= mult1;
     for(int d = 0; d < QT_NO_DIMS; d++) center_of_mass[d] += mult2 * point[d];
-    
+
     // If there is space in this quad tree and it is a leaf, add the object here
     if(is_leaf && size < QT_NODE_CAPACITY) {
         index[size] = new_index;
         size++;
         return true;
     }
-    
+
     // Don't add duplicates for now (this is not very nice)
     bool any_duplicate = false;
     for(int n = 0; n < size; n++) {
@@ -157,30 +157,30 @@ bool QuadTree::insert(int new_index)
         any_duplicate = any_duplicate | duplicate;
     }
     if(any_duplicate) return true;
-    
+
     // Otherwise, we need to subdivide the current cell
     if(is_leaf) subdivide();
-    
+
     // Find out where the point can be inserted
     if(northWest->insert(new_index)) return true;
     if(northEast->insert(new_index)) return true;
     if(southWest->insert(new_index)) return true;
     if(southEast->insert(new_index)) return true;
-    
+
     // Otherwise, the point cannot be inserted (this should never happen)
     return false;
 }
 
-    
+
 // Create four children which fully divide this cell into four quads of equal area
 void QuadTree::subdivide() {
-    
+
     // Create four children
     northWest = new QuadTree(this, data, boundary.x - .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
     northEast = new QuadTree(this, data, boundary.x + .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
     southWest = new QuadTree(this, data, boundary.x - .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
     southEast = new QuadTree(this, data, boundary.x + .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
-    
+
     // Move existing points to correct children
     for(int i = 0; i < size; i++) {
         bool success = false;
@@ -190,7 +190,7 @@ void QuadTree::subdivide() {
         if(!success) success = southEast->insert(index[i]);
         index[i] = -1;
     }
-    
+
     // Empty parent node
     size = 0;
     is_leaf = false;
@@ -223,17 +223,17 @@ bool QuadTree::isCorrect()
 void QuadTree::rebuildTree()
 {
     for(int n = 0; n < size; n++) {
-        
+
         // Check whether point is erroneous
         double* point = data + index[n] * QT_NO_DIMS;
         if(!boundary.containsPoint(point)) {
-            
+
             // Remove erroneous point
             int rem_index = index[n];
             for(int m = n + 1; m < size; m++) index[m - 1] = index[m];
             index[size - 1] = -1;
             size--;
-            
+
             // Update center-of-mass and counter in all parents
             bool done = false;
             QuadTree* node = this;
@@ -245,12 +245,12 @@ void QuadTree::rebuildTree()
                 if(node->getParent() == NULL) done = true;
                 else node = node->getParent();
             }
-            
+
             // Reinsert point in the root tree
             node->insert(rem_index);
         }
-    }    
-    
+    }
+
     // Rebuild lower parts of the tree
     northWest->rebuildTree();
     northEast->rebuildTree();
@@ -269,11 +269,11 @@ void QuadTree::getAllIndices(int* indices)
 // Build a list of all indices in quadtree
 int QuadTree::getAllIndices(int* indices, int loc)
 {
-    
+
     // Gather indices in current quadrant
     for(int i = 0; i < size; i++) indices[loc + i] = index[i];
     loc += size;
-    
+
     // Gather indices in children
     if(!is_leaf) {
         loc = northWest->getAllIndices(indices, loc);
@@ -291,27 +291,27 @@ int QuadTree::getDepth() {
                        northEast->getDepth()),
                    max(southWest->getDepth(),
                        southEast->getDepth()));
-                   
+
 }
 
 
 // Compute non-edge forces using Barnes-Hut algorithm
 void QuadTree::computeNonEdgeForces(int point_index, double theta, double neg_f[], double* sum_Q)
 {
-    
+
     // Make sure that we spend no time on empty nodes or self-interactions
     if(cum_size == 0 || (is_leaf && size == 1 && index[0] == point_index)) return;
-    
+
     // Compute distance between point and center-of-mass
     double D = .0;
     int ind = point_index * QT_NO_DIMS;
     for(int d = 0; d < QT_NO_DIMS; d++) buff[d]  = data[ind + d];
     for(int d = 0; d < QT_NO_DIMS; d++) buff[d] -= center_of_mass[d];
     for(int d = 0; d < QT_NO_DIMS; d++) D += buff[d] * buff[d];
-    
+
     // Check whether we can use this node as a "summary"
     if(is_leaf || max(boundary.hh, boundary.hw) / sqrt(D) < theta) {
-    
+
         // Compute and add t-SNE force between point and current node
         double Q = 1.0 / (1.0 + D);
         *sum_Q += cum_size * Q;
@@ -332,14 +332,14 @@ void QuadTree::computeNonEdgeForces(int point_index, double theta, double neg_f[
 // Computes edge forces
 void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, double* pos_f)
 {
-    
+
     // Loop over all edges in the graph
     int ind1, ind2;
     double D;
     for(int n = 0; n < N; n++) {
         ind1 = n * QT_NO_DIMS;
         for(int i = row_P[n]; i < row_P[n + 1]; i++) {
-        
+
             // Compute pairwise distance and Q-value
             D = .0;
             ind2 = col_P[i] * QT_NO_DIMS;
@@ -347,7 +347,7 @@ void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, d
             for(int d = 0; d < QT_NO_DIMS; d++) buff[d] -= data[ind2 + d];
             for(int d = 0; d < QT_NO_DIMS; d++) D += buff[d] * buff[d];
             D = val_P[i] / (1.0 + D);
-            
+
             // Sum positive force
             for(int d = 0; d < QT_NO_DIMS; d++) pos_f[ind1 + d] += D * buff[d];
         }
@@ -356,7 +356,7 @@ void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, d
 
 
 // Print out tree
-void QuadTree::print() 
+void QuadTree::print()
 {
     if(cum_size == 0) {
         printf("Empty node\n");
@@ -371,7 +371,7 @@ void QuadTree::print()
             printf(" (index = %d)", index[i]);
             if(i < size - 1) printf("\n");
             else printf("]\n");
-        }        
+        }
     }
     else {
         printf("Intersection node with center-of-mass = [");
