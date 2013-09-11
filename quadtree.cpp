@@ -28,7 +28,7 @@ bool Cell::containsPoint(double point[])
 
 
 // Default constructor for quadtree -- build tree, too!
-QuadTree::QuadTree(double* inp_data, int N, int no_dims) : no_dims(no_dims)
+QuadTree::QuadTree(double* inp_data, double* weights, int N, int no_dims) : no_dims(no_dims)
 {
 
     // Compute mean, width, and height of current map (boundaries of quadtree)
@@ -45,7 +45,7 @@ QuadTree::QuadTree(double* inp_data, int N, int no_dims) : no_dims(no_dims)
     for(int d = 0; d < no_dims; d++) mean_Y[d] /= (double) N;
 
     // Construct quadtree
-    init(NULL, inp_data, mean_Y[0], mean_Y[1], max(max_Y[0] - mean_Y[0], mean_Y[0] - min_Y[0]) + 1e-5,
+    init(NULL, inp_data, weights, mean_Y[0], mean_Y[1], max(max_Y[0] - mean_Y[0], mean_Y[0] - min_Y[0]) + 1e-5,
                                                max(max_Y[1] - mean_Y[1], mean_Y[1] - min_Y[1]) + 1e-5);
     fill(N);
     delete[] mean_Y; delete[] max_Y; delete[] min_Y;
@@ -53,36 +53,36 @@ QuadTree::QuadTree(double* inp_data, int N, int no_dims) : no_dims(no_dims)
 
 
 // Constructor for quadtree with particular size and parent -- build the tree, too!
-QuadTree::QuadTree(double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
+QuadTree::QuadTree(double* inp_data, double* weights, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
 {
-    init(NULL, inp_data, inp_x, inp_y, inp_hw, inp_hh);
+    init(NULL, inp_data, weights, inp_x, inp_y, inp_hw, inp_hh);
     fill(N);
 }
 
 // Constructor for quadtree with particular size and parent -- build the tree, too!
-QuadTree::QuadTree(QuadTree* inp_parent, double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
+QuadTree::QuadTree(QuadTree* inp_parent, double* inp_data, double* weights, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
 {
-    init(inp_parent, inp_data, inp_x, inp_y, inp_hw, inp_hh);
+    init(inp_parent, inp_data, weights, inp_x, inp_y, inp_hw, inp_hh);
     fill(N);
 }
 
 
 // Constructor for quadtree with particular size (do not fill the tree)
-QuadTree::QuadTree(double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
+QuadTree::QuadTree(double* inp_data, double* weights, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
 {
-    init(NULL, inp_data, inp_x, inp_y, inp_hw, inp_hh);
+    init(NULL, inp_data, weights, inp_x, inp_y, inp_hw, inp_hh);
 }
 
 
 // Constructor for quadtree with particular size and parent (do not fill the tree)
-QuadTree::QuadTree(QuadTree* inp_parent, double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
+QuadTree::QuadTree(QuadTree* inp_parent, double* inp_data, double* weights, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh) : no_dims(no_dims)
 {
-    init(inp_parent, inp_data, inp_x, inp_y, inp_hw, inp_hh);
+    init(inp_parent, inp_data, weights, inp_x, inp_y, inp_hw, inp_hh);
 }
 
 
 // Main initialization function
-void QuadTree::init(QuadTree* inp_parent, double* inp_data, double inp_x, double inp_y, double inp_hw, double inp_hh)
+void QuadTree::init(QuadTree* inp_parent, double* inp_data, double* weights, double inp_x, double inp_y, double inp_hw, double inp_hh)
 {
     if (no_dims > QT_MAX_DIMS) {
         fprintf(stderr, "Too many quadtree dims! Falling back to %d\n", QT_MAX_DIMS);
@@ -90,6 +90,7 @@ void QuadTree::init(QuadTree* inp_parent, double* inp_data, double inp_x, double
     }
     parent = inp_parent;
     data = inp_data;
+    this->weights = weights;
     is_leaf = true;
     size = 0;
     cum_size = 0;
@@ -138,9 +139,11 @@ bool QuadTree::insert(int new_index)
         return false;
 
     // Online update of cumulative size and center-of-mass
-    cum_size++;
-    double mult1 = (double) (cum_size - 1) / (double) cum_size;
-    double mult2 = 1.0 / (double) cum_size;
+    double weight = getWeight(new_index);
+    double old_cum_size = cum_size;
+    cum_size += weight;
+    double mult1 = old_cum_size / cum_size;
+    double mult2 = 1.0 / cum_size;
     for(int d = 0; d < no_dims; d++) center_of_mass[d] *= mult1;
     for(int d = 0; d < no_dims; d++) center_of_mass[d] += mult2 * point[d];
 
@@ -180,10 +183,10 @@ bool QuadTree::insert(int new_index)
 void QuadTree::subdivide() {
 
     // Create four children
-    northWest = new QuadTree(this, data, no_dims, boundary.x - .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
-    northEast = new QuadTree(this, data, no_dims, boundary.x + .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
-    southWest = new QuadTree(this, data, no_dims, boundary.x - .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
-    southEast = new QuadTree(this, data, no_dims, boundary.x + .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
+    northWest = new QuadTree(this, data, weights, no_dims, boundary.x - .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
+    northEast = new QuadTree(this, data, weights, no_dims, boundary.x + .5 * boundary.hw, boundary.y - .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
+    southWest = new QuadTree(this, data, weights, no_dims, boundary.x - .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
+    southEast = new QuadTree(this, data, weights, no_dims, boundary.x + .5 * boundary.hw, boundary.y + .5 * boundary.hh, .5 * boundary.hw, .5 * boundary.hh);
 
     // Move existing points to correct children
     for(int i = 0; i < size; i++) {
@@ -351,6 +354,7 @@ void QuadTree::computeEdgeForces(int* row_P, int* col_P, double* val_P, int N, d
             for(int d = 0; d < no_dims; d++) buff[d] -= data[ind2 + d];
             for(int d = 0; d < no_dims; d++) D += buff[d] * buff[d];
             D = val_P[i] / (1.0 + D);
+            D *= getWeight(n);
 
             // Sum positive force
             for(int d = 0; d < no_dims; d++) pos_f[ind1 + d] += D * buff[d];

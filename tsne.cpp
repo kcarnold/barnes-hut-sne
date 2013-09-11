@@ -24,7 +24,8 @@ extern "C" {
 
 using namespace std;
 
-TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, bool exact) : exact(exact), N(N), D(D), Y(Y), no_dims(no_dims)
+TSNE::TSNE(double* X, int N, int D, double* Y, int no_dims, double* weights, double perplexity, bool exact)
+    : exact(exact), N(N), D(D), Y(Y), no_dims(no_dims), weights(weights)
 {
     if(N - 1 < 3 * perplexity) { printf("Perplexity too large for the number of data points!\n"); exit(1); }
 
@@ -151,7 +152,7 @@ void TSNE::computeGradient(double* P, int* inp_row_P, int* inp_col_P, double* in
 {
 
     // Construct quadtree on current map
-    QuadTree* tree = new QuadTree(Y, N, no_dims);
+    QuadTree* tree = new QuadTree(Y, weights, N, no_dims);
 
     // Compute all terms required for t-SNE gradient
     double sum_Q = .0;
@@ -253,7 +254,7 @@ double TSNE::evaluateError(int* row_P, int* col_P, double* val_P, double* Y, int
 {
 
     // Get estimate of normalization term
-    QuadTree* tree = new QuadTree(Y, N, no_dims);
+    QuadTree* tree = new QuadTree(Y, weights, N, no_dims);
     double* buff = new double[no_dims]();
     double sum_Q = .0;
     for(int n = 0; n < N; n++) tree->computeNonEdgeForces(n, theta / 4, buff, &sum_Q);
@@ -821,7 +822,7 @@ int main() {
         // Initialize solution (randomly)
         for(int i = 0; i < N * no_dims; i++) Y[i] = randn() * .0001;
 
-        TSNE* tsne = new TSNE(data, N, D, Y, no_dims, perplexity, theta != 0);
+        TSNE* tsne = new TSNE(data, N, D, Y, no_dims, NULL, perplexity, theta != 0);
 		tsne->run(theta);
 
 		// Save the results

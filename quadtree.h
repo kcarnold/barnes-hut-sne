@@ -40,13 +40,14 @@ class QuadTree
     QuadTree* parent;
     bool is_leaf;
     int size;
-    int cum_size;
+    double cum_size;
 
     // Axis-aligned bounding box stored as a center with half-dimensions to represent the boundaries of this quad tree
     Cell boundary;
 
     // Indices in this quad tree node, corresponding center-of-mass, and list of all children
     double* data;
+    double* weights;
     double center_of_mass[QT_MAX_DIMS];
     int index[QT_NODE_CAPACITY];
 
@@ -57,11 +58,11 @@ class QuadTree
     QuadTree* southEast;
 
 public:
-    QuadTree(double* inp_data, int N, int no_dims);
-    QuadTree(double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(QuadTree* inp_parent, double* inp_data, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
-    QuadTree(QuadTree* inp_parent, double* inp_data, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(double* inp_data, double* weights, int N, int no_dims);
+    QuadTree(double* inp_data, double* weights, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(double* inp_data, double* weights, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(QuadTree* inp_parent, double* inp_data, double* weights, int N, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    QuadTree(QuadTree* inp_parent, double* inp_data, double* weights, int no_dims, double inp_x, double inp_y, double inp_hw, double inp_hh);
     ~QuadTree();
     void setData(double* inp_data);
     QuadTree* getParent();
@@ -77,10 +78,11 @@ public:
     void print();
 
 private:
-    void init(QuadTree* inp_parent, double* inp_data, double inp_x, double inp_y, double inp_hw, double inp_hh);
+    void init(QuadTree* inp_parent, double* inp_data, double* weights, double inp_x, double inp_y, double inp_hw, double inp_hh);
     void fill(int N);
     int getAllIndices(int* indices, int loc);
     bool isChild(int test_index, int start, int end);
+    double getWeight(int idx) { if (weights != NULL) return weights[idx]; else return 1.; }
 };
 
 #endif

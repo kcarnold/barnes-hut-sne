@@ -18,7 +18,7 @@ static inline double sign(double x) { return (x == .0 ? .0 : (x < .0 ? -1.0 : 1.
 class TSNE
 {
 public:
-    TSNE(double* X, int N, int D, double* Y, int no_dims, double perplexity, bool exact);
+    TSNE(double* X, int N, int D, double* Y, int no_dims, double* weights, double perplexity, bool exact);
     ~TSNE();
     void run(double theta);
     bool step(double theta);
@@ -46,6 +46,7 @@ private:
     // Current data
     int N, D;
     double *Y;
+    double *weights;
     int no_dims;
 
     // Learning state
